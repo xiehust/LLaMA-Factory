@@ -23,4 +23,3 @@ metrics
 bitsandbytes
 rouge-chinese
 jieba
-gptq
