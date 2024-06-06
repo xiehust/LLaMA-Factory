@@ -17,3 +17,10 @@ matplotlib>=3.7.0
 fire
 packaging
 pyyaml
+deepspeed
+autoawq
+metrics
+bitsandbytes
+rouge-chinese
+jieba
+gptq
