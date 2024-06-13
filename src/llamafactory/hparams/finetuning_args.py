@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Literal, Optional
+from typing import List, Literal, Optional
 
 
 @dataclass
@@ -24,12 +24,7 @@ class FreezeArguments:
             "help": (
                 "Name(s) of trainable modules for freeze (partial-parameter) fine-tuning. "
                 "Use commas to separate multiple modules. "
-                "Use `all` to specify all the available modules. "
-                "LLaMA choices: [`mlp`, `self_attn`], "
-                "BLOOM & Falcon & ChatGLM choices: [`mlp`, `self_attention`], "
-                "Qwen choices: [`mlp`, `attn`], "
-                "InternLM2 choices: [`feed_forward`, `attention`], "
-                "Others choices: the same as LLaMA."
+                "Use `all` to specify all the available modules."
             )
         },
     )
@@ -79,13 +74,7 @@ class LoraArguments:
             "help": (
                 "Name(s) of target modules to apply LoRA. "
                 "Use commas to separate multiple modules. "
-                "Use `all` to specify all the linear modules. "
-                "LLaMA choices: [`q_proj`, `k_proj`, `v_proj`, `o_proj`, `gate_proj`, `up_proj`, `down_proj`], "
-                "BLOOM & Falcon & ChatGLM choices: [`query_key_value`, `dense`, `dense_h_to_4h`, `dense_4h_to_h`], "
-                "Baichuan choices: [`W_pack`, `o_proj`, `gate_proj`, `up_proj`, `down_proj`], "
-                "Qwen choices: [`c_attn`, `attn.c_proj`, `w1`, `w2`, `mlp.c_proj`], "
-                "InternLM2 choices: [`wqkv`, `wo`, `w1`, `w2`, `w3`], "
-                "Others choices: the same as LLaMA."
+                "Use `all` to specify all the linear modules."
             )
         },
     )
@@ -330,19 +319,18 @@ class FinetuningArguments(FreezeArguments, LoraArguments, RLHFArguments, GaloreA
                 return [item.strip() for item in arg.split(",")]
             return arg
 
-        self.freeze_trainable_modules = split_arg(self.freeze_trainable_modules)
-        self.freeze_extra_modules = split_arg(self.freeze_extra_modules)
-        self.lora_alpha = self.lora_alpha or self.lora_rank * 2
-        self.lora_target = split_arg(self.lora_target)
-        self.additional_target = split_arg(self.additional_target)
-        self.galore_target = split_arg(self.galore_target)
+        self.freeze_trainable_modules: List[str] = split_arg(self.freeze_trainable_modules)
+        self.freeze_extra_modules: Optional[List[str]] = split_arg(self.freeze_extra_modules)
+        self.lora_alpha: int = self.lora_alpha or self.lora_rank * 2
+        self.lora_target: List[str] = split_arg(self.lora_target)
+        self.additional_target: Optional[List[str]] = split_arg(self.additional_target)
+        self.galore_target: List[str] = split_arg(self.galore_target)
         self.freeze_vision_tower = self.freeze_vision_tower or self.train_mm_proj_only
+        self.use_ref_model = self.pref_loss not in ["orpo", "simpo"]
 
         assert self.finetuning_type in ["lora", "freeze", "full"], "Invalid fine-tuning method."
         assert self.ref_model_quantization_bit in [None, 8, 4], "We only accept 4-bit or 8-bit quantization."
         assert self.reward_model_quantization_bit in [None, 8, 4], "We only accept 4-bit or 8-bit quantization."
-
-        self.use_ref_model = self.pref_loss not in ["orpo", "simpo"]
 
         if self.stage == "ppo" and self.reward_model is None:
             raise ValueError("`reward_model` is necessary for PPO training.")

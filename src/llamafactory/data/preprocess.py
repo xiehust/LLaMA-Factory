@@ -13,8 +13,7 @@ from .processors.unsupervised import preprocess_unsupervised_dataset, print_unsu
 
 
 if TYPE_CHECKING:
-    from transformers import ProcessorMixin, Seq2SeqTrainingArguments
-    from transformers.tokenization_utils import PreTrainedTokenizer
+    from transformers import PreTrainedTokenizer, ProcessorMixin, Seq2SeqTrainingArguments
 
     from ..hparams import DataArguments
     from .template import Template
@@ -23,7 +22,7 @@ if TYPE_CHECKING:
 def get_preprocess_and_print_func(
     data_args: "DataArguments",
     training_args: "Seq2SeqTrainingArguments",
-    stage: Literal["pt", "sft", "rm", "kto"],
+    stage: Literal["pt", "sft", "rm", "ppo", "kto"],
     template: "Template",
     tokenizer: "PreTrainedTokenizer",
     processor: Optional["ProcessorMixin"],

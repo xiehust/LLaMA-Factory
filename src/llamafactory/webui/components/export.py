@@ -21,6 +21,13 @@ if TYPE_CHECKING:
 GPTQ_BITS = ["8", "4", "3", "2"]
 
 
+def can_quantize(checkpoint_path: Union[str, List[str]]) -> "gr.Dropdown":
+    if isinstance(checkpoint_path, list) and len(checkpoint_path) != 0:
+        return gr.Dropdown(value="none", interactive=False)
+    else:
+        return gr.Dropdown(interactive=True)
+
+
 def save_model(
     lang: str,
     model_name: str,
@@ -89,12 +96,15 @@ def create_export_tab(engine: "Engine") -> Dict[str, "Component"]:
         export_size = gr.Slider(minimum=1, maximum=100, value=1, step=1)
         export_quantization_bit = gr.Dropdown(choices=["none"] + GPTQ_BITS, value="none")
         export_quantization_dataset = gr.Textbox(value="data/c4_demo.json")
-        export_device = gr.Radio(choices=["cpu", "cuda"], value="cpu")
+        export_device = gr.Radio(choices=["cpu", "auto"], value="cpu")
         export_legacy_format = gr.Checkbox()
 
     with gr.Row():
         export_dir = gr.Textbox()
         export_hub_model_id = gr.Textbox()
+
+    checkpoint_path: gr.Dropdown = engine.manager.get_elem_by_id("top.checkpoint_path")
+    checkpoint_path.change(can_quantize, [checkpoint_path], [export_quantization_bit], queue=False)
 
     export_btn = gr.Button()
     info_box = gr.Textbox(show_label=False, interactive=False)
