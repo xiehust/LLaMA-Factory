@@ -27,8 +27,7 @@ if __name__ == "__main__":
     os.environ['NCCL_DEBUG'] = 'INFO'
     os.environ['HCCL_OVER_OFI'] = '1'
     
-    num_machines = int(os.environ["NODE_NUMBER"])
-    num_processes = int(os.environ["SM_NUM_GPUS"]) * num_machines
+
     sg_config = os.environ["sg_config"]
     sg_lora_merge_config = os.environ["sg_lora_merge_config"]
     s3_data_paths = os.environ.get('s3_data_paths')
@@ -37,16 +36,6 @@ if __name__ == "__main__":
     DEVICES = ','.join([str(i) for i in range(GPUS_PER_NODE)])
     
     # os.system("wandb disabled")
-    
-    # file_name = './sg_config.yaml'
-    # with open(file_name) as f:
-    #     doc = yaml.safe_load(f)
-    # doc['machine_rank'] = host_rank
-    # doc['main_process_ip'] = str(master_addr)
-    # doc['num_machines'] = num_machines  # how many intances in this training job
-    # doc['num_processes'] = num_processes  # how many GPU cards in total
-    # with open('./sg_config.yaml', 'w') as f:
-    #     yaml.safe_dump(doc, f)
 
     #Install LLama Factory 
     os.system("pip install --no-deps -e .")
@@ -68,7 +57,7 @@ if __name__ == "__main__":
     # print(f'-----finished cp-------')
 
 
-    os.system(f"CUDA_VISIBLE_DEVICES={DEVICES} llamafactory-cli train {sg_config}")
+    os.system(f"CUDA_VISIBLE_DEVICES=0 llamafactory-cli train {sg_config}")
 
     if os.environ.get("merge_lora") == '1':
         os.system(f"CUDA_VISIBLE_DEVICES=0 llamafactory-cli export {sg_lora_merge_config}")
