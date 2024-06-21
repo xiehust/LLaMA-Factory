@@ -29,7 +29,7 @@ if __name__ == "__main__":
     
 
     sg_config = os.environ["sg_config"]
-    sg_lora_merge_config = os.environ["sg_lora_merge_config"]
+    sg_lora_merge_config = os.environ.get("sg_lora_merge_config")
     s3_data_paths = os.environ.get('s3_data_paths')
 
     GPUS_PER_NODE = int(os.environ["SM_NUM_GPUS"])
