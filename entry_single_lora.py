@@ -2,6 +2,22 @@ import os
 import json
 import socket
 import yaml
+import subprocess
+import sys
+
+def run_command(command):
+    try:
+        result = subprocess.run(command, check=True, shell=True, text=True, capture_output=True)
+        print(result.stdout)
+    except subprocess.CalledProcessError as e:
+        print(f"Command failed with error: {e}", file=sys.stderr)
+        print(f"Error output: {e.stderr}", file=sys.stderr)
+        sys.exit(1)
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}", file=sys.stderr)
+        sys.exit(1)
+        
+        
 
 if __name__ == "__main__":
    
@@ -50,22 +66,32 @@ if __name__ == "__main__":
     if s3_data_paths:
         paths = s3_data_paths.split(',')
         for s3_path in paths:
-            os.system("./s5cmd sync {0} {1}".format(s3_path+'/*', '/opt/ml/code/data/'))
+            # os.system("./s5cmd sync {0} {1}".format(s3_path+'/*', '/opt/ml/code/data/'))
+            # 同步S3数据到本地
+            s3_sync_command = f"./s5cmd sync {s3_path}/* /opt/ml/code/data/"
+            run_command(s3_sync_command)
 
-    # print("*****************start cp pretrain model*****************************")
-    # os.system("./s5cmd sync {0} {1}".format(os.environ['MODEL_S3_PATH'], os.environ["MODEL_LOCAL_PATH"]))
-    # print(f'-----finished cp-------')
 
+    # os.system(f"CUDA_VISIBLE_DEVICES=0 llamafactory-cli train {sg_config}")
+    # 训练命令
+    train_command = f"CUDA_VISIBLE_DEVICES=0 llamafactory-cli train {sg_config}"
+    run_command(train_command)
 
-    os.system(f"CUDA_VISIBLE_DEVICES=0 llamafactory-cli train {sg_config}")
-
+    # 如果需要合并LoRA
     if os.environ.get("merge_lora") == '1':
-        os.system(f"CUDA_VISIBLE_DEVICES=0 llamafactory-cli export {sg_lora_merge_config}")
-        os.system("./s5cmd sync {0} {1}".format("/tmp/finetuned_model_merged", os.environ['OUTPUT_MODEL_S3_PATH']))
-
-
+        # os.system(f"CUDA_VISIBLE_DEVICES=0 llamafactory-cli export {sg_lora_merge_config}")
+        # os.system("./s5cmd sync {0} {1}".format("/tmp/finetuned_model_merged", os.environ['OUTPUT_MODEL_S3_PATH']))
+        merge_command = f"CUDA_VISIBLE_DEVICES=0 llamafactory-cli export {sg_lora_merge_config}"
+        run_command(merge_command)
+        
+        sync_merged_command = f"./s5cmd sync /tmp/finetuned_model_merged {os.environ['OUTPUT_MODEL_S3_PATH']}"
+        run_command(sync_merged_command)
+        
     print("*****************finished training, start cp finetuned model*****************************")
-    os.system("./s5cmd sync {0} {1}".format("/tmp/finetuned_model", os.environ['OUTPUT_MODEL_S3_PATH']))
+    # os.system("./s5cmd sync {0} {1}".format("/tmp/finetuned_model", os.environ['OUTPUT_MODEL_S3_PATH']))
+    # 同步最终模型
+    sync_final_command = f"./s5cmd sync /tmp/finetuned_model {os.environ['OUTPUT_MODEL_S3_PATH']}"
+    run_command(sync_final_command)
     
 
     print(f'-----finished cp-------')

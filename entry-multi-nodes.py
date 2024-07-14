@@ -2,6 +2,20 @@ import os
 import json
 import socket
 import yaml
+import subprocess
+import sys
+
+def run_command(command):
+    try:
+        result = subprocess.run(command, check=True, shell=True, text=True, capture_output=True)
+        print(result.stdout)
+    except subprocess.CalledProcessError as e:
+        print(f"Command failed with error: {e}", file=sys.stderr)
+        print(f"Error output: {e.stderr}", file=sys.stderr)
+        sys.exit(1)
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}", file=sys.stderr)
+        sys.exit(1)
 
 if __name__ == "__main__":
    
@@ -36,23 +50,11 @@ if __name__ == "__main__":
     GPUS_PER_NODE = int(os.environ["SM_NUM_GPUS"])
     DEVICES = ','.join([str(i) for i in range(GPUS_PER_NODE)])
     
-    # file_name = './sg_config.yaml'
-    # with open(file_name) as f:
-    #     doc = yaml.safe_load(f)
-    # doc['machine_rank'] = host_rank
-    # doc['main_process_ip'] = str(master_addr)
-    # doc['num_machines'] = num_machines  # how many intances in this training job
-    # doc['num_processes'] = num_processes  # how many GPU cards in total
-    # with open('./sg_config.yaml', 'w') as f:
-    #     yaml.safe_dump(doc, f)
 
     #Install LLama Factory 
     os.system("pip install --no-deps -e .")
     os.system("pip install -r requirements.txt")
     
-    #invoke the torch launcher shell script.
-    #Note: we will use the s5cmd to speed up the uploading model assets to S3.
-    # os.system("chmod +x ./train_script_sagemaker.sh")
     os.system("chmod +x ./s5cmd")
 
     os.system("ls /opt/ml/code")
@@ -60,26 +62,27 @@ if __name__ == "__main__":
     if s3_data_paths:
         paths = s3_data_paths.split(',')
         for s3_path in paths:
-            os.system("./s5cmd sync {0} {1}".format(s3_path+'/*', '/opt/ml/code/data/'))
+            # 同步S3数据到本地
+            s3_sync_command = f"./s5cmd sync {s3_path}/* /opt/ml/code/data/"
+            run_command(s3_sync_command)
 
-    # print("*****************start cp pretrain model*****************************")
-    # os.system("./s5cmd sync {0} {1}".format(os.environ['MODEL_S3_PATH'], os.environ["MODEL_LOCAL_PATH"]))
-    # print(f'-----finished cp-------')
     print(f'------envs------\nnum_machines:{num_machines}\nnum_processes:{num_processes}\nhost_rank:{host_rank}\n')
-    if host_rank == 0:
-        os.system(f"CUDA_VISIBLE_DEVICES={DEVICES} NNODES=2 RANK=0 MASTER_ADDR={master_addr} MASTER_PORT=29500 llamafactory-cli train {sg_config}")
-    else:
-        os.system(f"CUDA_VISIBLE_DEVICES={DEVICES} NNODES=2 RANK=1 MASTER_ADDR={master_addr} MASTER_PORT=29500 llamafactory-cli train {sg_config}")
-
+    train_command = f"CUDA_VISIBLE_DEVICES={DEVICES} NNODES={num_machines} RANK={host_rank} MASTER_ADDR={master_addr} MASTER_PORT=29500 llamafactory-cli train {sg_config}"
+    run_command(train_command)
+        
     if os.environ.get("merge_lora") == '1' and host_rank == 0:
         print(f'-----start merge lora-------')
-        os.system(f'CUDA_VISIBLE_DEVICES=0 llamafactory-cli export {sg_lora_merge_config}')
+        merge_command = f'CUDA_VISIBLE_DEVICES=0 llamafactory-cli export {sg_lora_merge_config}'
+        run_command(merge_command)
+
         print(f'-----end merge lora-------')
-        os.system("./s5cmd sync {0} {1}".format("/tmp/finetuned_model_merged", os.environ['OUTPUT_MODEL_S3_PATH']))
+        sync_merged_command = f"./s5cmd sync /tmp/finetuned_model_merged {os.environ['OUTPUT_MODEL_S3_PATH']}"
+        run_command(sync_merged_command)
 
           
     if host_rank == 0:
         print("*****************finished training, start cp finetuned model*****************************")
-        os.system("./s5cmd sync {0} {1}".format("/tmp/finetuned_model", os.environ['OUTPUT_MODEL_S3_PATH']))
+        sync_final_command = f"./s5cmd sync /tmp/finetuned_model {os.environ['OUTPUT_MODEL_S3_PATH']}"
+        run_command(sync_final_command)
         print(f'-----finished cp-------')
   
