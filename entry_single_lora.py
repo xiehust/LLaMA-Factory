@@ -75,7 +75,8 @@ if __name__ == "__main__":
     # os.system(f"CUDA_VISIBLE_DEVICES=0 llamafactory-cli train {sg_config}")
     # 训练命令
     train_command = f"CUDA_VISIBLE_DEVICES=0 llamafactory-cli train {sg_config}"
-    run_command(train_command)
+    # run_command(train_command)
+    os.system(train_command)
 
     # 如果需要合并LoRA
     if os.environ.get("merge_lora") == '1':
