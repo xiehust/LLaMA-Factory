@@ -69,7 +69,10 @@ if __name__ == "__main__":
     print(f'------envs------\nnum_machines:{num_machines}\nnum_processes:{num_processes}\nhost_rank:{host_rank}\n')
     train_command = f"CUDA_VISIBLE_DEVICES={DEVICES} NNODES={num_machines} RANK={host_rank} MASTER_ADDR={master_addr} MASTER_PORT=29500 llamafactory-cli train {sg_config}"
     # run_command(train_command)
-    os.system(train_command)
+    exit_code = os.system(train_command)
+    if exit_code != 0:
+        print(f"Train failed with exit code: {exit_code}")
+        sys.exit(1)
         
     if os.environ.get("merge_lora") == '1' and host_rank == 0:
         print(f'-----start merge lora-------')

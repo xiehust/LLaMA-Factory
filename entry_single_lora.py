@@ -76,7 +76,10 @@ if __name__ == "__main__":
     # 训练命令
     train_command = f"CUDA_VISIBLE_DEVICES=0 llamafactory-cli train {sg_config}"
     # run_command(train_command)
-    os.system(train_command)
+    exit_code = os.system(train_command)
+    if exit_code != 0:
+        print(f"Train failed with exit code: {exit_code}")
+        sys.exit(1)
 
     # 如果需要合并LoRA
     if os.environ.get("merge_lora") == '1':
