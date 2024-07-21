@@ -42,7 +42,7 @@ if __name__ == "__main__":
    # os.environ['FI_EFA_USE_DEVICE_RDMA'] = '1'
     os.environ['NCCL_DEBUG'] = 'INFO'
     os.environ['HCCL_OVER_OFI'] = '1'
-    
+    os.environ["NCCL_IGNORE_DISABLED_P2P"] = "1"
 
     sg_config = os.environ["sg_config"]
     sg_lora_merge_config = os.environ.get("sg_lora_merge_config")

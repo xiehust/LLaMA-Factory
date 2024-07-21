@@ -40,6 +40,7 @@ if __name__ == "__main__":
    # os.environ['FI_EFA_USE_DEVICE_RDMA'] = '1'
     os.environ['NCCL_DEBUG'] = 'INFO'
     os.environ['HCCL_OVER_OFI'] = '1'
+    os.environ["NCCL_IGNORE_DISABLED_P2P"] = "1"
     
     num_machines = int(os.environ["NODE_NUMBER"])
     num_processes = int(os.environ["SM_NUM_GPUS"]) * num_machines
