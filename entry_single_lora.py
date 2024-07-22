@@ -74,7 +74,7 @@ if __name__ == "__main__":
 
     # os.system(f"CUDA_VISIBLE_DEVICES=0 llamafactory-cli train {sg_config}")
     # 训练命令
-    train_command = f"CUDA_VISIBLE_DEVICES=0 llamafactory-cli train {sg_config}"
+    train_command = f"CUDA_VISIBLE_DEVICES={DEVICES} llamafactory-cli train {sg_config}"
     # run_command(train_command)
     exit_code = os.system(train_command)
     if exit_code != 0:
