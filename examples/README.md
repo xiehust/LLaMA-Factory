@@ -94,28 +94,28 @@ FORCE_TORCHRUN=1 llamafactory-cli train examples/train_lora/llama3_lora_sft_ds3.
 
 ### QLoRA Fine-Tuning
 
-#### Supervised Fine-Tuning with 4/8-bit Bitsandbytes Quantization (Recommended)
+#### Supervised Fine-Tuning with 4/8-bit Bitsandbytes/HQQ/EETQ Quantization (Recommended)
 
 ```bash
-CUDA_VISIBLE_DEVICES=0 llamafactory-cli train examples/train_qlora/llama3_lora_sft_bitsandbytes.yaml
+llamafactory-cli train examples/train_qlora/llama3_lora_sft_otfq.yaml
 ```
 
 #### Supervised Fine-Tuning with 4/8-bit GPTQ Quantization
 
 ```bash
-CUDA_VISIBLE_DEVICES=0 llamafactory-cli train examples/train_qlora/llama3_lora_sft_gptq.yaml
+llamafactory-cli train examples/train_qlora/llama3_lora_sft_gptq.yaml
 ```
 
 #### Supervised Fine-Tuning with 4-bit AWQ Quantization
 
 ```bash
-CUDA_VISIBLE_DEVICES=0 llamafactory-cli train examples/train_qlora/llama3_lora_sft_awq.yaml
+llamafactory-cli train examples/train_qlora/llama3_lora_sft_awq.yaml
 ```
 
 #### Supervised Fine-Tuning with 2-bit AQLM Quantization
 
 ```bash
-CUDA_VISIBLE_DEVICES=0 llamafactory-cli train examples/train_qlora/llama3_lora_sft_aqlm.yaml
+llamafactory-cli train examples/train_qlora/llama3_lora_sft_aqlm.yaml
 ```
 
 ### Full-Parameter Fine-Tuning
@@ -195,6 +195,12 @@ llamafactory-cli train examples/extras/badam/llama3_full_sft.yaml
 llamafactory-cli train examples/extras/loraplus/llama3_lora_sft.yaml
 ```
 
+#### PiSSA Fine-Tuning
+
+```bash
+llamafactory-cli train examples/extras/pissa/llama3_lora_sft.yaml
+```
+
 #### Mixture-of-Depths Fine-Tuning
 
 ```bash
@@ -211,5 +217,5 @@ llamafactory-cli train examples/extras/llama_pro/llama3_freeze_sft.yaml
 #### FSDP+QLoRA Fine-Tuning
 
 ```bash
-bash examples/extras/fsdp_qlora/single_node.sh
+bash examples/extras/fsdp_qlora/train.sh
 ```
