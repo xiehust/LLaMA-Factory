@@ -55,7 +55,11 @@ if __name__ == "__main__":
 
     #Install LLama Factory 
     os.system("pip install --no-deps -e .")
-    os.system("pip install -r requirements.txt")
+    index_path = os.environ.get('PIP_INDEX')
+    if index_path:
+        os.system(f"pip install -r requirements.txt -i {index_path}")
+    else:
+        os.system("pip install -r requirements.txt")
     
     #invoke the torch launcher shell script.
     #Note: we will use the s5cmd to speed up the uploading model assets to S3.
