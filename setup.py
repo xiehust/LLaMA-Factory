@@ -29,7 +29,7 @@ def get_version():
 def get_requires():
     with open("requirements.txt", "r", encoding="utf-8") as f:
         file_content = f.read()
-        lines = [line.strip() for line in file_content.strip().split("\n") if not line.startswith("#")]
+        lines = [line.strip() for line in file_content.strip().split("\n") if not line.startswith("#") and not line.startswith("-")]
         return lines
 
 
