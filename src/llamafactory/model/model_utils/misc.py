@@ -1,3 +1,17 @@
+# Copyright 2024 the LlamaFactory team.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 from typing import TYPE_CHECKING, List
 
 from ...extras.logging import get_logger
@@ -14,17 +28,22 @@ def find_all_linear_modules(model: "PreTrainedModel", freeze_vision_tower: bool)
     r"""
     Finds all available modules to apply lora or galore.
     """
+    model_type = getattr(model.config, "model_type", None)
     forbidden_modules = {"lm_head"}
-
-    if model.config.model_type == "chatglm":
+    if model_type == "chatglm":
         forbidden_modules.add("output_layer")
-    elif model.config.model_type == "internlm2":
+    elif model_type == "internlm2":
         forbidden_modules.add("output")
-    elif model.config.model_type in ["llava", "paligemma"]:
+    elif model_type in ["llava", "paligemma"]:
         forbidden_modules.add("multi_modal_projector")
+    elif model_type == "qwen2_vl":
+        forbidden_modules.add("merger")
 
     if freeze_vision_tower:
-        forbidden_modules.add("vision_tower")
+        if model_type == "qwen2_vl":
+            forbidden_modules.add("visual")
+        else:
+            forbidden_modules.add("vision_tower")
 
     module_names = set()
     for name, module in model.named_modules():
