@@ -1,7 +1,22 @@
+# Copyright 2024 the LlamaFactory team.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import base64
 import io
 import json
 import os
+import re
 import uuid
 from typing import TYPE_CHECKING, AsyncGenerator, Dict, List, Optional, Tuple
 
@@ -37,9 +52,8 @@ if is_requests_available():
 
 
 if TYPE_CHECKING:
-    from numpy.typing import NDArray
-
     from ..chat import ChatModel
+    from ..data.mm_plugin import ImageInput
     from .protocol import ChatCompletionRequest, ScoreEvaluationRequest
 
 
@@ -55,7 +69,7 @@ ROLE_MAPPING = {
 
 def _process_request(
     request: "ChatCompletionRequest",
-) -> Tuple[List[Dict[str, str]], Optional[str], Optional[str], Optional["NDArray"]]:
+) -> Tuple[List[Dict[str, str]], Optional[str], Optional[str], Optional["ImageInput"]]:
     logger.info("==== request ====\n{}".format(json.dumps(dictify(request), indent=2, ensure_ascii=False)))
 
     if len(request.messages) == 0:
@@ -78,9 +92,11 @@ def _process_request(
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid role")
 
         if message.role == Role.ASSISTANT and isinstance(message.tool_calls, list) and len(message.tool_calls):
-            name = message.tool_calls[0].function.name
-            arguments = message.tool_calls[0].function.arguments
-            content = json.dumps({"name": name, "argument": arguments}, ensure_ascii=False)
+            tool_calls = [
+                {"name": tool_call.function.name, "arguments": tool_call.function.arguments}
+                for tool_call in message.tool_calls
+            ]
+            content = json.dumps(tool_calls, ensure_ascii=False)
             input_messages.append({"role": ROLE_MAPPING[Role.FUNCTION], "content": content})
         elif isinstance(message.content, list):
             for input_item in message.content:
@@ -88,15 +104,14 @@ def _process_request(
                     input_messages.append({"role": ROLE_MAPPING[message.role], "content": input_item.text})
                 else:
                     image_url = input_item.image_url.url
-                    if image_url.startswith("data:image"):  # base64 image
-                        image_data = base64.b64decode(image_url.split(",", maxsplit=1)[1])
-                        image_path = io.BytesIO(image_data)
+                    if re.match(r"^data:image\/(png|jpg|jpeg|gif|bmp);base64,(.+)$", image_url):  # base64 image
+                        image_stream = io.BytesIO(base64.b64decode(image_url.split(",", maxsplit=1)[1]))
                     elif os.path.isfile(image_url):  # local file
-                        image_path = open(image_url, "rb")
+                        image_stream = open(image_url, "rb")
                     else:  # web uri
-                        image_path = requests.get(image_url, stream=True).raw
+                        image_stream = requests.get(image_url, stream=True).raw
 
-                    image = Image.open(image_path).convert("RGB")
+                    image = Image.open(image_stream).convert("RGB")
         else:
             input_messages.append({"role": ROLE_MAPPING[message.role], "content": message.content})
 
@@ -104,7 +119,7 @@ def _process_request(
     if isinstance(tool_list, list) and len(tool_list):
         try:
             tools = json.dumps([dictify(tool.function) for tool in tool_list], ensure_ascii=False)
-        except Exception:
+        except json.JSONDecodeError:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid tools")
     else:
         tools = None
@@ -146,15 +161,17 @@ async def create_chat_completion_response(
     choices = []
     for i, response in enumerate(responses):
         if tools:
-            result = chat_model.engine.template.format_tools.extract(response.response_text)
+            result = chat_model.engine.template.extract_tool(response.response_text)
         else:
             result = response.response_text
 
-        if isinstance(result, tuple):
-            name, arguments = result
-            function = Function(name=name, arguments=arguments)
-            tool_call = FunctionCall(id="call_{}".format(uuid.uuid4().hex), function=function)
-            response_message = ChatCompletionMessage(role=Role.ASSISTANT, tool_calls=[tool_call])
+        if isinstance(result, list):
+            tool_calls = []
+            for tool in result:
+                function = Function(name=tool[0], arguments=tool[1])
+                tool_calls.append(FunctionCall(id="call_{}".format(uuid.uuid4().hex), function=function))
+
+            response_message = ChatCompletionMessage(role=Role.ASSISTANT, tool_calls=tool_calls)
             finish_reason = Finish.TOOL
         else:
             response_message = ChatCompletionMessage(role=Role.ASSISTANT, content=result)
@@ -212,8 +229,9 @@ async def create_stream_chat_completion_response(
 async def create_score_evaluation_response(
     request: "ScoreEvaluationRequest", chat_model: "ChatModel"
 ) -> "ScoreEvaluationResponse":
+    score_id = "scoreval-{}".format(uuid.uuid4().hex)
     if len(request.messages) == 0:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid request")
 
     scores = await chat_model.aget_scores(request.messages, max_length=request.max_length)
-    return ScoreEvaluationResponse(model=request.model, scores=scores)
+    return ScoreEvaluationResponse(id=score_id, model=request.model, scores=scores)
