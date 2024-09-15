@@ -54,7 +54,13 @@ if __name__ == "__main__":
 
     #Install LLama Factory 
     os.system("pip install --no-deps -e .")
-    os.system("pip install -r requirements.txt")
+    index_path = os.environ.get('PIP_INDEX')
+    if index_path:
+        os.system(f"pip install -r requirements.txt -i {index_path}")
+    else:
+        os.system("pip install -r requirements.txt")
+        ## China region cannot install flash_attn from pip
+        os.system("pip install flash_attn==2.6.1")
     
     os.system("chmod +x ./s5cmd")
 
@@ -66,6 +72,38 @@ if __name__ == "__main__":
             # 同步S3数据到本地
             s3_sync_command = f"./s5cmd sync {s3_path}/* /opt/ml/code/data/"
             run_command(s3_sync_command)
+
+    #s3 uri for checkpoint 
+    s3_checkpoint = os.environ.get('s3_checkpoint')
+    if s3_checkpoint:
+        s3_checkpoint = s3_checkpoint[:-1] if s3_checkpoint.endswith('/') else s3_checkpoint
+        # download to local
+        run_command(f"./s5cmd sync {s3_checkpoint}/* /tmp/checkpoint/")
+        
+        with open(sg_config) as f:
+            doc = yaml.safe_load(f)
+        # add resume_from_checkpoint
+        doc['resume_from_checkpoint'] = "/tmp/checkpoint/"
+        # writt back to yaml
+        with open(sg_config, 'w') as f:
+            yaml.safe_dump(doc, f)
+        print(f"resume_from_checkpoint {s3_checkpoint}")
+
+    #s3 uri for model path 
+    s3_model_path = os.environ.get('s3_model_path')
+    if s3_model_path:
+        s3_model_path = s3_model_path[:-1] if s3_model_path.endswith('/') else s3_model_path
+        # download to local
+        run_command(f"./s5cmd sync {s3_model_path}/* /tmp/model_path/")
+        
+        with open(sg_config) as f:
+            doc = yaml.safe_load(f)
+        # add resume_from_checkpoint
+        doc['model_name_or_path'] = "/tmp/model_path/"
+        # writt back to yaml
+        with open(sg_config, 'w') as f:
+            yaml.safe_dump(doc, f)
+        print(f"s3 model_name_or_path {s3_model_path}")
 
     print(f'------envs------\nnum_machines:{num_machines}\nnum_processes:{num_processes}\nhost_rank:{host_rank}\n')
     train_command = f"CUDA_VISIBLE_DEVICES={DEVICES} NNODES={num_machines} RANK={host_rank} MASTER_ADDR={master_addr} MASTER_PORT=29500 llamafactory-cli train {sg_config}"
