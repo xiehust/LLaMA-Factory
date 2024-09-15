@@ -18,13 +18,14 @@ matplotlib>=3.7.0
 fire
 packaging
 pyyaml
-deepspeed==0.14.4
-autoawq==0.2.5
+deepspeed>=0.14.4
+autoawq>=0.2.5
 metrics
 bitsandbytes
 rouge-chinese
 jieba
-peft==0.11.1
-flash_attn==2.6.1
+peft>=0.11.1
 pandas
 unsloth[cu121-torch220] @ git+https://github.com/unslothai/unsloth.git
+modelscope
+wandb
