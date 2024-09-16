@@ -106,7 +106,7 @@ if __name__ == "__main__":
         print(f"s3 model_name_or_path {s3_model_path}")
 
     print(f'------envs------\nnum_machines:{num_machines}\nnum_processes:{num_processes}\nhost_rank:{host_rank}\n')
-    train_command = f"CUDA_VISIBLE_DEVICES={DEVICES} NNODES={num_machines} RANK={host_rank} MASTER_ADDR={master_addr} MASTER_PORT=29500 llamafactory-cli train {sg_config}"
+    train_command = f"FORCE_TORCHRUN=1  NNODES={num_machines} RANK={host_rank} MASTER_ADDR={master_addr} MASTER_PORT=29500 llamafactory-cli train {sg_config}"
     # run_command(train_command)
     exit_code = os.system(train_command)
     if exit_code != 0:
