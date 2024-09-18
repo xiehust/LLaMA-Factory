@@ -1,4 +1,4 @@
-transformers @ git+https://github.com/huggingface/transformers.git
+transformers @ git+https://github.com/huggingface/transformers.git@21fac7abba2a37fae86106f87fcf9974fd1e3830
 datasets>=2.16.0,<=2.21.0
 accelerate>=0.34.0
 peft>=0.11.1,<=0.12.0
