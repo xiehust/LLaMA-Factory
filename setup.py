@@ -26,11 +26,11 @@ def get_version() -> str:
         (version,) = re.findall(pattern, file_content)
         return version
 
-
+#增加-i,支持自定义安装源
 def get_requires() -> List[str]:
     with open("requirements.txt", "r", encoding="utf-8") as f:
         file_content = f.read()
-        lines = [line.strip() for line in file_content.strip().split("\n") if not line.startswith("#")]
+        lines = [line.strip() for line in file_content.strip().split("\n") if not line.startswith("#") and not line.startswith("-i")]
         return lines
 
 
