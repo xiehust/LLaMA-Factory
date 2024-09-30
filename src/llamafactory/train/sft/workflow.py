@@ -104,13 +104,13 @@ def run_sft(
     if training_args.predict_with_generate:
         tokenizer.padding_side = "left"  # use left-padding in generation
 
-    # Evaluation
-    if training_args.do_eval:
-        metrics = trainer.evaluate(metric_key_prefix="eval", **gen_kwargs)
-        if training_args.predict_with_generate:  # eval_loss will be wrong if predict_with_generate is enabled
-            metrics.pop("eval_loss", None)
-        trainer.log_metrics("eval", metrics)
-        trainer.save_metrics("eval", metrics)
+    # Evaluation error for deepseek-v2-lite https://github.com/microsoft/DeepSpeed/issues/5799
+    # if training_args.do_eval:
+    #     metrics = trainer.evaluate(metric_key_prefix="eval", **gen_kwargs)
+    #     if training_args.predict_with_generate:  # eval_loss will be wrong if predict_with_generate is enabled
+    #         metrics.pop("eval_loss", None)
+    #     trainer.log_metrics("eval", metrics)
+    #     trainer.save_metrics("eval", metrics)
 
     # Predict
     if training_args.do_predict:
