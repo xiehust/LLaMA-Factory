@@ -4,6 +4,8 @@ import socket
 import yaml
 import subprocess
 import sys
+import time
+from multiprocessing import Process
 
 def run_command(command):
     try:
@@ -16,6 +18,39 @@ def run_command(command):
     except Exception as e:
         print(f"An unexpected error occurred: {e}", file=sys.stderr)
         sys.exit(1)
+
+def monitor_and_sync():
+    """
+    监控检查点的同步。
+    此函数通过检查 /tmp/finetuned_model/ 目录，并检查是否有新的检查点。
+    如果有，则同步到 S3 路径。
+    """
+    while True:
+        # 检查 /tmp/finetuned_model/ 目录
+        if os.path.exists('/tmp/finetuned_model/'):
+            for folder in os.listdir('/tmp/finetuned_model/'):
+                if folder.startswith('checkpoint-') :
+                    # 同步到 S3 路径
+                    os.system(f'./s5cmd sync /tmp/finetuned_model {os.environ["OUTPUT_MODEL_S3_PATH"]}')
+                    print(f'Sync {folder} completed!')
+        time.sleep(60) 
+def start_monitoring():
+    """
+    启动监控进程。
+    此函数通过创建一个进程来启动检查点的监控，并在退出前打印一条消息。
+    """
+    global monitoring_process
+    monitoring_process = Process(target=monitor_and_sync)
+    monitoring_process.start()
+    print('Checkpoint monitoring process started.')
+
+def stop_monitoring():
+    """
+    结束监控进程。
+    此函数通过终止监控进程来停止检查点的监控，并在退出前打印一条消息。
+    """
+    monitoring_process.terminate()
+    print('Checkpoint monitoring process stopped.')
 
 if __name__ == "__main__":
    
@@ -60,7 +95,7 @@ if __name__ == "__main__":
     else:
         os.system("pip install -r requirements.txt")
         ## China region cannot install flash_attn from pip
-        os.system("pip install flash_attn==2.6.1")
+        os.system("pip install flash_attn==2.6.3")
     
     os.system("chmod +x ./s5cmd")
 
@@ -78,7 +113,7 @@ if __name__ == "__main__":
     if s3_checkpoint:
         s3_checkpoint = s3_checkpoint[:-1] if s3_checkpoint.endswith('/') else s3_checkpoint
         # download to local
-        run_command(f"./s5cmd sync {s3_checkpoint}/* /tmp/checkpoint/")
+        run_command(f"./s5cmd sync --exclude \"checkpoint-*\" {s3_checkpoint}/* /tmp/checkpoint/")
         
         with open(sg_config) as f:
             doc = yaml.safe_load(f)
@@ -94,7 +129,7 @@ if __name__ == "__main__":
     if s3_model_path:
         s3_model_path = s3_model_path[:-1] if s3_model_path.endswith('/') else s3_model_path
         # download to local
-        run_command(f"./s5cmd sync {s3_model_path}/* /tmp/model_path/")
+        run_command(f"./s5cmd sync --exclude \"checkpoint-*\" {s3_model_path}/* /tmp/model_path/")
         
         with open(sg_config) as f:
             doc = yaml.safe_load(f)
@@ -105,6 +140,10 @@ if __name__ == "__main__":
             yaml.safe_dump(doc, f)
         print(f"s3 model_name_or_path {s3_model_path}")
 
+    if host_rank == 0:
+        # 启动checkpoint监控进程
+        start_monitoring()
+
     print(f'------envs------\nnum_machines:{num_machines}\nnum_processes:{num_processes}\nhost_rank:{host_rank}\n')
     train_command = f"FORCE_TORCHRUN=1  NNODES={num_machines} RANK={host_rank} MASTER_ADDR={master_addr} MASTER_PORT=29500 llamafactory-cli train {sg_config}"
     # run_command(train_command)
@@ -112,6 +151,10 @@ if __name__ == "__main__":
     if exit_code != 0:
         print(f"Train failed with exit code: {exit_code}")
         sys.exit(1)
+
+    if host_rank == 0:
+        # 停止checkpoint监控
+        stop_monitoring()
         
     if os.environ.get("merge_lora") == '1' and host_rank == 0:
         print(f'-----start merge lora-------')
@@ -119,7 +162,7 @@ if __name__ == "__main__":
         run_command(merge_command)
 
         print(f'-----end merge lora-------')
-        sync_merged_command = f"./s5cmd sync /tmp/finetuned_model_merged {os.environ['OUTPUT_MODEL_S3_PATH']}"
+        sync_merged_command = f"./s5cmd sync --exclude \"checkpoint-*\" /tmp/finetuned_model_merged {os.environ['OUTPUT_MODEL_S3_PATH']}"
         run_command(sync_merged_command)
 
           

@@ -28,4 +28,6 @@ peft>=0.11.1
 pandas
 modelscope
 wandb
+vllm==0.6.0
+nltk
 unsloth[cu121-torch230] @ git+https://github.com/unslothai/unsloth.git@3dff3b38687c92cfbe80a62324eadccb4672206e

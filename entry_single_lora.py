@@ -4,6 +4,8 @@ import socket
 import yaml
 import subprocess
 import sys
+import time
+from multiprocessing import Process
 
 def run_command(command):
     try:
@@ -16,8 +18,40 @@ def run_command(command):
     except Exception as e:
         print(f"An unexpected error occurred: {e}", file=sys.stderr)
         sys.exit(1)
-        
-        
+
+def monitor_and_sync():
+    """
+    监控检查点的同步。
+    此函数通过检查 /tmp/finetuned_model/ 目录，并检查是否有新的检查点。
+    如果有，则同步到 S3 路径。
+    """
+    while True:
+        # 检查 /tmp/finetuned_model/ 目录
+        if os.path.exists('/tmp/finetuned_model/'):
+            for folder in os.listdir('/tmp/finetuned_model/'):
+                if folder.startswith('checkpoint-') :
+                    # 同步到 S3 路径
+                    os.system(f'./s5cmd sync  /tmp/finetuned_model {os.environ["OUTPUT_MODEL_S3_PATH"]}')
+                    print(f'Sync {folder} completed!')
+        time.sleep(60) 
+def start_monitoring():
+    """
+    启动监控进程。
+    此函数通过创建一个进程来启动检查点的监控，并在退出前打印一条消息。
+    """
+    global monitoring_process
+    monitoring_process = Process(target=monitor_and_sync)
+    monitoring_process.start()
+    print('Checkpoint monitoring process started.')
+
+def stop_monitoring():
+    """
+    结束监控进程。
+    此函数通过终止监控进程来停止检查点的监控，并在退出前打印一条消息。
+    """
+    monitoring_process.terminate()
+    print('Checkpoint monitoring process stopped.')
+
 
 if __name__ == "__main__":
    
@@ -59,7 +93,7 @@ if __name__ == "__main__":
     else:
         os.system("pip install -r requirements.txt")
         ## China region cannot install flash_attn from pip
-        os.system("pip install flash_attn==2.6.1")
+        os.system("pip install flash_attn==2.6.3")
     
     #invoke the torch launcher shell script.
     #Note: we will use the s5cmd to speed up the uploading model assets to S3.
@@ -81,7 +115,7 @@ if __name__ == "__main__":
     if s3_checkpoint:
         s3_checkpoint = s3_checkpoint[:-1] if s3_checkpoint.endswith('/') else s3_checkpoint
         # download to local
-        run_command(f"./s5cmd sync {s3_checkpoint}/* /tmp/checkpoint/")
+        run_command(f'./s5cmd sync --exclude "checkpoint-*" {s3_checkpoint}/* /tmp/checkpoint/')
         
         with open(sg_config) as f:
             doc = yaml.safe_load(f)
@@ -97,7 +131,7 @@ if __name__ == "__main__":
     if s3_model_path:
         s3_model_path = s3_model_path[:-1] if s3_model_path.endswith('/') else s3_model_path
         # download to local
-        run_command(f"./s5cmd sync {s3_model_path}/* /tmp/model_path/")
+        run_command(f'./s5cmd sync --exclude "checkpoint-*" {s3_model_path}/* /tmp/model_path/')
         
         with open(sg_config) as f:
             doc = yaml.safe_load(f)
@@ -108,7 +142,8 @@ if __name__ == "__main__":
             yaml.safe_dump(doc, f)
         print(f"s3 model_name_or_path {s3_model_path}")
 
-    # os.system(f"CUDA_VISIBLE_DEVICES=0 llamafactory-cli train {sg_config}")
+    # 启动checkpoint监控进程
+    start_monitoring()
     # 训练命令
     train_command = f"CUDA_VISIBLE_DEVICES={DEVICES} llamafactory-cli train {sg_config}"
     # run_command(train_command)
@@ -117,6 +152,8 @@ if __name__ == "__main__":
         print(f"Train failed with exit code: {exit_code}")
         sys.exit(1)
 
+    # 停止checkpoint监控
+    stop_monitoring()
     # 如果需要合并LoRA
     if os.environ.get("merge_lora") == '1':
         # os.system(f"CUDA_VISIBLE_DEVICES=0 llamafactory-cli export {sg_lora_merge_config}")
@@ -124,14 +161,20 @@ if __name__ == "__main__":
         merge_command = f"CUDA_VISIBLE_DEVICES=0 llamafactory-cli export {sg_lora_merge_config}"
         run_command(merge_command)
         
-        sync_merged_command = f"./s5cmd sync /tmp/finetuned_model_merged {os.environ['OUTPUT_MODEL_S3_PATH']}"
+        sync_merged_command = f'./s5cmd sync --exclude "checkpoint-*" /tmp/finetuned_model_merged {os.environ["OUTPUT_MODEL_S3_PATH"]}'
         run_command(sync_merged_command)
         
     print("*****************finished training, start cp finetuned model*****************************")
     # os.system("./s5cmd sync {0} {1}".format("/tmp/finetuned_model", os.environ['OUTPUT_MODEL_S3_PATH']))
     # 同步最终模型
-    sync_final_command = f"./s5cmd sync /tmp/finetuned_model {os.environ['OUTPUT_MODEL_S3_PATH']}"
+    sync_final_command = f'./s5cmd sync /tmp/finetuned_model {os.environ["OUTPUT_MODEL_S3_PATH"]}'
     run_command(sync_final_command)
     
 
     print(f'-----finished cp-------')
+
+    if os.environ.get("MMLU_EVAL") == '1':
+        print(f'-----start model eval-------')
+        model_path = "/tmp/finetuned_model_merged" if  os.environ.get("merge_lora") == '1' else "/tmp/finetuned_model"
+        eval_command = f"llamafactory-cli eval --model_name_or_path {model_path} --task mmlu_test --template fewshot --lang en --n_shot 5 --batch_size 4"
+        os.system(eval_command)
