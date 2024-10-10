@@ -150,6 +150,9 @@ if __name__ == "__main__":
     exit_code = os.system(train_command)
     if exit_code != 0:
         print(f"Train failed with exit code: {exit_code}")
+        if host_rank == 0:
+            # 停止checkpoint监控
+            stop_monitoring()
         sys.exit(1)
 
     if host_rank == 0:
