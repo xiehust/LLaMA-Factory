@@ -31,8 +31,8 @@ def monitor_and_sync():
             for folder in os.listdir('/tmp/finetuned_model/'):
                 if folder.startswith('checkpoint-') :
                     # 同步到 S3 路径
-                    os.system(f'./s5cmd sync /tmp/finetuned_model {os.environ["OUTPUT_MODEL_S3_PATH"]}')
-                    print(f'Sync {folder} completed!')
+                    os.system(f'./s5cmd sync /tmp/finetuned_model/{folder} {os.environ["OUTPUT_MODEL_S3_PATH"]}')
+                    print(f'Sync checkpoint completed: {folder} ')
         time.sleep(60) 
 def start_monitoring():
     """
