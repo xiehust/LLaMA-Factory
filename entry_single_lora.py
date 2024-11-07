@@ -19,6 +19,17 @@ def run_command(command):
         print(f"An unexpected error occurred: {e}", file=sys.stderr)
         sys.exit(1)
 
+def flush_checkpoint_dir():
+    print('flush checkpoint dir')
+    if os.path.exists('/tmp/finetuned_model/'):
+        for folder in os.listdir('/tmp/finetuned_model/'):
+            if folder.startswith('checkpoint-') :
+                # 同步到 S3 路径
+                os.system(f'./s5cmd sync /tmp/finetuned_model/{folder} {os.environ["OUTPUT_MODEL_S3_PATH"]}')
+                print(f'Sync checkpoint completed: {folder} ')
+                # 删除checkkpoint文件
+                os.system(f'rm -rf /tmp/finetuned_model/{folder}')
+                print(f'Delete checkpoint:{folder} ')
 def monitor_and_sync():
     """
     监控检查点的同步。
@@ -28,12 +39,15 @@ def monitor_and_sync():
     while True:
         # 检查 /tmp/finetuned_model/ 目录
         if os.path.exists('/tmp/finetuned_model/'):
-            for folder in os.listdir('/tmp/finetuned_model/'):
-                if folder.startswith('checkpoint-') :
-                    # 同步到 S3 路径
-                    os.system(f'./s5cmd sync  /tmp/finetuned_model/{folder} {os.environ["OUTPUT_MODEL_S3_PATH"]}')
-                    print(f'Sync checkpoint completed: {folder} ')
-        time.sleep(60) 
+            checkpoints = sorted([folder for folder in os.listdir('/tmp/finetuned_model/') if folder.startswith('checkpoint-')])
+            for folder in checkpoints:
+                # 同步到 S3 路径
+                os.system(f'./s5cmd sync /tmp/finetuned_model/{folder} {os.environ["OUTPUT_MODEL_S3_PATH"]}')
+                print(f'Sync checkpoint completed: {folder} ')
+                # 删除checkkpoint文件
+                # os.system(f'rm -rf /tmp/finetuned_model/{folder}')
+                # print(f'Delete checkpoint:{folder} ')
+        time.sleep(10) 
 def start_monitoring():
     """
     启动监控进程。
@@ -47,9 +61,10 @@ def start_monitoring():
 def stop_monitoring():
     """
     结束监控进程。
-    此函数通过终止监控进程来停止检查点的监控，并在退出前打印一条消息。
+    此函数通过终止监控进程来停止检查点的监控，并在退出前再扫描一次检查点目录，以确保所有检查点都被同步。
     """
     monitoring_process.terminate()
+    flush_checkpoint_dir()
     print('Checkpoint monitoring process stopped.')
 
 
@@ -169,7 +184,7 @@ if __name__ == "__main__":
     print("*****************finished training, start cp finetuned model*****************************")
     # os.system("./s5cmd sync {0} {1}".format("/tmp/finetuned_model", os.environ['OUTPUT_MODEL_S3_PATH']))
     # 同步最终模型
-    sync_final_command = f'./s5cmd sync /tmp/finetuned_model {os.environ["OUTPUT_MODEL_S3_PATH"]}'
+    sync_final_command = f'./s5cmd sync --exclude "checkpoint-*" /tmp/finetuned_model {os.environ["OUTPUT_MODEL_S3_PATH"]}'
     run_command(sync_final_command)
     
 
