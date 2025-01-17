@@ -27,7 +27,9 @@ from .components import (
 )
 from .css import CSS
 from .engine import Engine
-
+from extensions import(
+    load_extensions
+)
 
 if is_gradio_available():
     import gradio as gr
@@ -57,6 +59,9 @@ def create_ui(demo_mode: bool = False) -> "gr.Blocks":
 
         with gr.Tab("Chat"):
             engine.manager.add_elems("infer", create_infer_tab(engine))
+
+        with gr.Tab("Extensions"):
+            engine.manager.add_elems("ext", load_extensions(engine))
 
         if not demo_mode:
             with gr.Tab("Export"):
