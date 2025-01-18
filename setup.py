@@ -17,7 +17,13 @@ import re
 from typing import List
 
 from setuptools import find_packages, setup
+from setuptools.command.install import install
 
+# Add custom install command to set extra index URL
+class CustomInstall(install):
+    def run(self):
+        os.system('pip config set global.extra-index-url "https://pip.repos.neuron.amazonaws.com"')
+        install.run(self)
 
 def get_version() -> str:
     with open(os.path.join("src", "llamafactory", "extras", "env.py"), encoding="utf-8") as f:
@@ -45,6 +51,12 @@ def get_console_scripts() -> List[str]:
 extra_require = {
     "torch": ["torch>=1.13.1"],
     "torch-npu": ["torch==2.1.0", "torch-npu==2.1.0.post3", "decorator"],
+    "torch-neuronx": ["torch-neuronx==2.1.2.2.3.0",
+                      "neuronx-cc==2.15.128.0",
+                      "neuronx_distributed==0.9.0",
+                      "torchvision",
+                      "trl",
+                      "optimum-neuron @ git+https://github.com/huggingface/optimum-neuron.git"],
     "metrics": ["nltk", "jieba", "rouge-chinese"],
     "deepspeed": ["deepspeed>=0.10.0,<=0.14.4"],
     "liger-kernel": ["liger-kernel"],
@@ -74,7 +86,7 @@ extra_require = {
     "modelscope": ["modelscope"],
     "openmind": ["openmind"],
     "swanlab": ["swanlab"],
-    "dev": ["pre-commit", "ruff", "pytest"],
+    "dev": ["pre-commit", "ruff", "pytest"]
 }
 
 
@@ -96,6 +108,9 @@ def main():
         install_requires=get_requires(),
         extras_require=extra_require,
         entry_points={"console_scripts": get_console_scripts()},
+        cmdclass={
+            'install': CustomInstall,
+        },
         classifiers=[
             "Development Status :: 4 - Beta",
             "Intended Audience :: Developers",

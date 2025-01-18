@@ -49,6 +49,8 @@ if is_ray_available():
     from ray.train import RunConfig, ScalingConfig
     from ray.train.torch import TorchTrainer
 
+if is_neuron_available():
+    from optimum.neuron import NeuronTrainer
 
 if TYPE_CHECKING:
     from transformers import PreTrainedModel, TrainerCallback

@@ -19,18 +19,19 @@ import json
 import os
 from types import MethodType
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
-
 import numpy as np
 import torch
-from transformers import Seq2SeqTrainer
 from typing_extensions import override
-
 from ...extras import logging
 from ...extras.constants import IGNORE_INDEX
-from ...extras.packages import is_transformers_version_greater_than
+from ...extras.packages import is_transformers_version_greater_than,is_neuron_available
 from ..callbacks import SaveProcessorCallback
 from ..trainer_utils import create_custom_optimizer, create_custom_scheduler
 
+if is_neuron_available():
+    from optimum.neuron import NeuronTrainer as Seq2SeqTrainer
+else:
+    from transformers import Seq2SeqTrainer
 
 if TYPE_CHECKING:
     from torch.utils.data import Dataset

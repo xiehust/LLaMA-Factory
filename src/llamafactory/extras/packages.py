@@ -61,6 +61,8 @@ def is_gradio_available():
 def is_matplotlib_available():
     return _is_package_available("matplotlib")
 
+def is_neuron_available():
+    return _is_package_available("optimum")
 
 def is_pillow_available():
     return _is_package_available("PIL")
