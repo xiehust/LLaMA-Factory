@@ -56,6 +56,8 @@ extra_require = {
                       "neuronx_distributed==0.9.0",
                       "torchvision",
                       "trl",
+                      "transformers==4.46.2",
+                      "accelerate==0.29.2",
                       "optimum-neuron @ git+https://github.com/huggingface/optimum-neuron.git"],
     "metrics": ["nltk", "jieba", "rouge-chinese"],
     "deepspeed": ["deepspeed>=0.10.0,<=0.14.4"],

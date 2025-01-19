@@ -98,7 +98,10 @@ class CustomSeq2SeqTrainer(Seq2SeqTrainer):
 
         It should be removed after https://github.com/huggingface/transformers/pull/35651 is merged.
         """
-        loss = super().compute_loss(model, inputs, return_outputs, **kwargs)
+        if is_neuron_available():
+            loss = super().compute_loss(model, inputs, **kwargs)
+        else:
+            loss = super().compute_loss(model, inputs, return_outputs, **kwargs)
         if kwargs.get("num_items_in_batch") and not getattr(self, "model_accepts_loss_kwargs", False):
             if return_outputs:
                 loss = (loss[0] / self.args.gradient_accumulation_steps, *loss[1:])

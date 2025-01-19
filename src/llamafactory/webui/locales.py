@@ -1553,6 +1553,124 @@ LOCALES = {
             "info": "클라우드 버전 또는 오프라인 버전.",
         },
     },
+    "neuron_tab":{
+        "en":{
+            "label":"Neuron configurations",
+        },
+        "ru":{
+            "label":"Конфигурации Neuron",
+        },
+        "zh":{
+            "label":"Neuron 参数设置",
+        },
+        "ko":{
+            "label":"Neuron 설정",
+        }
+    },
+    "use_neuron":{
+        "en":{
+            "label":"Use Neuron",
+            "info":"Whether to use Neuron for training."
+        },
+        "ru":{
+            "label":"Использовать Neuron",
+            "info":"Использовать ли Neuron для обучения."
+        },
+        "zh":{
+            "label":"使用 Neuron",
+            "info":"是否使用 Neuron 进行训练。"
+        },
+        "ko":{
+            "label":"Neuron 사용",
+            "info":"Neuron을 사용하여 학습할 것인가?"
+        }
+    },
+    "zero_1":{
+        "en":{
+            "label":"Zero-1",
+            "info":"Whether to use ZeRO Stage 1 Optimization."
+        },
+        "ru":{
+            "label":"Zero-1",
+            "info":"Использовать ли ZeRO Stage 1 Optimization."
+        },
+        "zh":{
+            "label":"Zero-1",
+            "info":"是否使用 ZeRO Stage 1 优化。"
+        },
+        "ko":{
+            "label":"Zero-1",
+            "info":"ZeRO Stage 1 최적화를 사용할 것인가?"
+        }
+    },
+    "tensor_parallel_size":{
+        "en":{
+            "label":"Tensor Parallel Size",
+            "info":"The size of tensor parallelism."
+        },
+        "ru":{
+            "label":"Размер параллельного тензора",
+            "info":"Размер параллельного тензора."
+        },
+        "zh":{
+            "label":"张量并行大小",
+            "info":"张量并行的大小。"
+        },
+        "ko":{
+            "label":"텐서 병렬 크기",
+            "info":"텐서 병렬의 크기."
+        }
+    },
+    "pipeline_parallel_size":{
+        "en":{
+            "label":"Pipeline Parallel Size",
+            "info":"The size of pipeline parallelism."
+        },
+        "ru":{
+            "label":"Размер параллельного пайплайна",
+            "info":"Размер параллельного пайплайна."
+        },
+        "zh":{
+            "label":"管道并行大小",
+            "info":"管道并行的大小。"
+        },
+        "ko":{
+            "label":"파이프라인 병렬 크기",
+            "info":"파이프라인 병렬의 크기."
+        }
+    },
+    "pipeline_parallel_mode":{
+        "en":{
+            "label":"Pipeline Parallel Mode",
+            "info":"The mode of pipeline parallelism."
+        },
+        "ru":{
+            "label":"Режим параллельного пайплайна",
+            "info":"Режим параллельного пайплайна."
+        },
+        "zh":{
+            "label":"管道并行模式",
+            "info":"管道并行的模式。"
+        },
+        "ko":{
+            "label":"파이프라인 병렬 모드",
+            "info":"파이프라인 병렬의 모드."
+        }
+    },
+    "cmd_preview_tab": {
+        "en": {
+            "label": "Command preview",
+        },
+        "ru": {
+            "label": "Предпросмотр команды",
+        },
+        "zh": {
+            "label": "命令预览",
+        },
+        "ko": {
+            "label": "명령어 미리보기",
+        },
+    },
     "cmd_preview_btn": {
         "en": {
             "value": "Preview command",

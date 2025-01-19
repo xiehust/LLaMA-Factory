@@ -252,6 +252,13 @@ class Runner:
             args["swanlab_api_key"] = get("train.swanlab_api_key")
             args["swanlab_mode"] = get("train.swanlab_mode")
 
+        # neuron config
+        if get("train.use_neuron"):
+            args["zero_1"] = get("train.zero_1")
+            args["tensor_parallel_size"] = get("train.tensor_parallel_size")
+            args["pipeline_parallel_size"] = get("train.pipeline_parallel_size")
+        
+
         # eval config
         if get("train.val_size") > 1e-6 and args["stage"] != "ppo":
             args["val_size"] = get("train.val_size")

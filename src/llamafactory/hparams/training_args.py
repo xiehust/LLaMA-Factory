@@ -8,19 +8,8 @@ from transformers.training_args import _convert_str_dict
 from ..extras.misc import use_ray
 from ..extras.packages import is_neuron_available
 
-@dataclass
-class NeuronArguments:
-    r"""
-    Arguments pertaining to the Neuron training.
-    """
-    tensor_parallel_size: int = field(
-        default=1,
-        metadata={"help": "The tensor parallel size for Neuron training. Default is 2."},
-    )
-
-    def __post_init__(self):
-        pass
-
+if is_neuron_available():
+    from optimum.neuron import NeuronTrainingArguments
 
 @dataclass
 class RayArguments:
@@ -52,7 +41,9 @@ class RayArguments:
 
 
 @dataclass
-class TrainingArguments(RayArguments, Seq2SeqTrainingArguments,NeuronArguments):
+class TrainingArguments(RayArguments, 
+                        *((NeuronTrainingArguments,) if is_neuron_available() else ()),
+                          Seq2SeqTrainingArguments):
     r"""
     Arguments pertaining to the trainer.
     """
@@ -60,4 +51,5 @@ class TrainingArguments(RayArguments, Seq2SeqTrainingArguments,NeuronArguments):
     def __post_init__(self):
         Seq2SeqTrainingArguments.__post_init__(self)
         RayArguments.__post_init__(self)
-        NeuronArguments.__post_init__(self)
+        if is_neuron_available():
+            NeuronTrainingArguments.__post_init__(self)

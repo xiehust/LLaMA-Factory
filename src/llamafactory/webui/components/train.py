@@ -311,9 +311,29 @@ def create_train_tab(engine: "Engine") -> Dict[str, "Component"]:
             swanlab_run_name=swanlab_run_name,
             swanlab_workspace=swanlab_workspace,
             swanlab_api_key=swanlab_api_key,
-            swanlab_mode=swanlab_mode,
+            swanlab_mode=swanlab_mode
         )
     )
+
+    with gr.Accordion(open=False) as neuron_tab:
+        with gr.Row():
+            use_neuron = gr.Checkbox()
+            zero_1 = gr.Checkbox()
+            tensor_parallel_size = gr.Number(value=1)
+            pipeline_parallel_size = gr.Number(value=1)
+
+    input_elems.update({use_neuron, zero_1, tensor_parallel_size, pipeline_parallel_size})
+
+    elem_dict.update(
+        dict(
+            neuron_tab=neuron_tab,
+            use_neuron=use_neuron,
+            zero_1=zero_1,
+            tensor_parallel_size=tensor_parallel_size,
+            pipeline_parallel_size=pipeline_parallel_size,
+        )
+    )
+
 
     with gr.Row():
         cmd_preview_btn = gr.Button()
