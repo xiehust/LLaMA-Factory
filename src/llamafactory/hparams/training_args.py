@@ -6,7 +6,20 @@ from transformers import Seq2SeqTrainingArguments
 from transformers.training_args import _convert_str_dict
 
 from ..extras.misc import use_ray
+from ..extras.packages import is_neuron_available
 
+if is_neuron_available():
+    from optimum.neuron import NeuronSFTConfig, NeuronTrainingArguments,Seq2SeqNeuronTrainingArguments
+    @dataclass
+    class NeuronSFTConfigNew(NeuronSFTConfig):
+        r"""
+        Arguments pertaining to the Neuron SFT training.
+        Inherit from NeuronSFTConfig but remove packing attribute to resolve the confict with DataArguments
+        """
+        packing: bool = field(init=False, repr=False)
+
+        def __post_init__(self):
+            NeuronSFTConfig.__post_init__(self)
 
 @dataclass
 class RayArguments:
@@ -38,11 +51,16 @@ class RayArguments:
 
 
 @dataclass
-class TrainingArguments(RayArguments, Seq2SeqTrainingArguments):
+class TrainingArguments(RayArguments, 
+                        *((NeuronTrainingArguments,) if is_neuron_available() else ()),
+                        Seq2SeqTrainingArguments
+                          ):
     r"""
     Arguments pertaining to the trainer.
     """
 
     def __post_init__(self):
+        if is_neuron_available():
+            NeuronTrainingArguments.__post_init__(self)
         Seq2SeqTrainingArguments.__post_init__(self)
         RayArguments.__post_init__(self)

@@ -32,7 +32,7 @@ from typing_extensions import override
 
 from ..extras import logging
 from ..extras.constants import IGNORE_INDEX
-from ..extras.packages import is_apollo_available, is_galore_available, is_ray_available
+from ..extras.packages import is_apollo_available, is_galore_available, is_ray_available,is_neuron_available
 from ..hparams import FinetuningArguments, ModelArguments
 from ..model import find_all_linear_modules, load_model, load_tokenizer, load_valuehead_params
 
@@ -49,6 +49,8 @@ if is_ray_available():
     from ray.train import RunConfig, ScalingConfig
     from ray.train.torch import TorchTrainer
 
+if is_neuron_available():
+    from optimum.neuron import NeuronTrainer
 
 if TYPE_CHECKING:
     from transformers import PreTrainedModel, TrainerCallback

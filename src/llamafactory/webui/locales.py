@@ -15,10 +15,10 @@
 LOCALES = {
     "lang": {
         "en": {
-            "label": "Lang",
+            "label": "Language",
         },
         "ru": {
-            "label": "язык",
+            "label": "Язык",
         },
         "zh": {
             "label": "语言",
@@ -30,11 +30,11 @@ LOCALES = {
     "model_name": {
         "en": {
             "label": "Model name",
-            "info": "Input the name prefix to search for the model.",
+            "info": "Input the initial name to search for the model.",
         },
         "ru": {
             "label": "Название модели",
-            "info": "Введите префикс имени для поиска модели.",
+            "info": "Введите начальное имя для поиска модели.",
         },
         "zh": {
             "label": "模型名称",
@@ -42,7 +42,7 @@ LOCALES = {
         },
         "ko": {
             "label": "모델 이름",
-            "info": "모델을 검색하기 위해 이름 접두어를 입력하세요.",
+            "info": "모델을 검색할 초기 이름을 입력하세요.",
         },
     },
     "model_path": {
@@ -129,48 +129,50 @@ LOCALES = {
     },
     "template": {
         "en": {
-            "label": "Prompt template",
-            "info": "The template used in constructing prompts.",
+            "label": "Chat template",
+            "info": "The chat template used in constructing prompts.",
         },
         "ru": {
-            "label": "Шаблон запроса",
-            "info": "Шаблон, используемый при формировании запросов.",
+            "label": "Шаблон чата",
+            "info": "Шаблон чата используемый для составления подсказок.",
         },
         "zh": {
-            "label": "提示模板",
+            "label": "对话模板",
             "info": "构建提示词时使用的模板。",
         },
         "ko": {
-            "label": "프롬프트 템플릿",
-            "info": "프롬프트 구성에 사용될 템플릿.",
+            "label": "채팅 템플릿",
+            "info": "프롬프트 작성에 사용되는 채팅 템플릿.",
         },
     },
     "rope_scaling": {
         "en": {
             "label": "RoPE scaling",
+            "info": "RoPE scaling method to use.",
         },
         "ru": {
             "label": "Масштабирование RoPE",
+            "info": "Метод масштабирования RoPE для использования.",
         },
-        "zh": {
-            "label": "RoPE 插值方法",
-        },
+        "zh": {"label": "RoPE 插值方法", "info": "RoPE 插值时使用的方法。"},
         "ko": {
             "label": "RoPE 스케일링",
+            "info": "사용할 RoPE 스케일링 방법.",
         },
     },
     "booster": {
         "en": {
             "label": "Booster",
+            "info": "Approach used to boost training speed.",
         },
         "ru": {
             "label": "Ускоритель",
+            "info": "Подход, используемый для ускорения обучения.",
         },
-        "zh": {
-            "label": "加速方式",
-        },
+        "zh": {"label": "加速方式", "info": "使用的加速方法。"},
         "ko": {
             "label": "부스터",
+            "info": "훈련 속도를 향상시키기 위해 사용된 접근 방식.",
         },
     },
     "training_stage": {
@@ -1551,6 +1553,124 @@ LOCALES = {
         "ko": {
             "label": "SwanLab 모드",
             "info": "클라우드 버전 또는 오프라인 버전.",
+        },
+    },
+    "neuron_tab":{
+        "en":{
+            "label":"Neuron configurations",
+        },
+        "ru":{
+            "label":"Конфигурации Neuron",
+        },
+        "zh":{
+            "label":"Neuron 参数设置",
+        },
+        "ko":{
+            "label":"Neuron 설정",
+        }
+    },
+    "use_neuron":{
+        "en":{
+            "label":"Use Neuron",
+            "info":"Whether to use Neuron for training."
+        },
+        "ru":{
+            "label":"Использовать Neuron",
+            "info":"Использовать ли Neuron для обучения."
+        },
+        "zh":{
+            "label":"使用 Neuron",
+            "info":"是否使用 Neuron 进行训练。"
+        },
+        "ko":{
+            "label":"Neuron 사용",
+            "info":"Neuron을 사용하여 학습할 것인가?"
+        }
+    },
+    "zero_1":{
+        "en":{
+            "label":"Zero-1",
+            "info":"Whether to use ZeRO Stage 1 Optimization."
+        },
+        "ru":{
+            "label":"Zero-1",
+            "info":"Использовать ли ZeRO Stage 1 Optimization."
+        },
+        "zh":{
+            "label":"Zero-1",
+            "info":"是否使用 ZeRO Stage 1 优化。"
+        },
+        "ko":{
+            "label":"Zero-1",
+            "info":"ZeRO Stage 1 최적화를 사용할 것인가?"
+        }
+    },
+    "tensor_parallel_size":{
+        "en":{
+            "label":"Tensor Parallel Size",
+            "info":"The size of tensor parallelism."
+        },
+        "ru":{
+            "label":"Размер параллельного тензора",
+            "info":"Размер параллельного тензора."
+        },
+        "zh":{
+            "label":"张量并行大小",
+            "info":"张量并行的大小。"
+        },
+        "ko":{
+            "label":"텐서 병렬 크기",
+            "info":"텐서 병렬의 크기."
+        }
+    },
+    "pipeline_parallel_size":{
+        "en":{
+            "label":"Pipeline Parallel Size",
+            "info":"The size of pipeline parallelism."
+        },
+        "ru":{
+            "label":"Размер параллельного пайплайна",
+            "info":"Размер параллельного пайплайна."
+        },
+        "zh":{
+            "label":"管道并行大小",
+            "info":"管道并行的大小。"
+        },
+        "ko":{
+            "label":"파이프라인 병렬 크기",
+            "info":"파이프라인 병렬의 크기."
+        }
+    },
+    "pipeline_parallel_mode":{
+        "en":{
+            "label":"Pipeline Parallel Mode",
+            "info":"The mode of pipeline parallelism."
+        },
+        "ru":{
+            "label":"Режим параллельного пайплайна",
+            "info":"Режим параллельного пайплайна."
+        },
+        "zh":{
+            "label":"管道并行模式",
+            "info":"管道并行的模式。"
+        },
+        "ko":{
+            "label":"파이프라인 병렬 모드",
+            "info":"파이프라인 병렬의 모드."
+        }
+    },
+    "cmd_preview_tab": {
+        "en": {
+            "label": "Command preview",
+        },
+        "ru": {
+            "label": "Предпросмотр команды",
+        },
+        "zh": {
+            "label": "命令预览",
+        },
+        "ko": {
+            "label": "명령어 미리보기",
         },
     },
     "cmd_preview_btn": {

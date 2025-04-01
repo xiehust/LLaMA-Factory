@@ -86,20 +86,7 @@ def load_tokenizer(model_args: "ModelArguments") -> "TokenizerModule":
     except Exception as e:
         raise OSError("Failed to load tokenizer.") from e
 
-    if model_args.model_max_length is not None and tokenizer.model_max_length != model_args.model_max_length:
-        tokenizer.model_max_length = model_args.model_max_length
-
-    if model_args.new_special_tokens is not None:
-        num_added_tokens = tokenizer.add_special_tokens(
-            dict(additional_special_tokens=model_args.new_special_tokens),
-            replace_additional_special_tokens=False,
-        )
-        logger.info_rank0("Add {} to special tokens.".format(",".join(model_args.new_special_tokens)))
-        if num_added_tokens > 0 and not model_args.resize_vocab:
-            model_args.resize_vocab = True
-            logger.warning_rank0("New tokens have been added, changed `resize_vocab` to True.")
-
-    patch_tokenizer(tokenizer)
+    patch_tokenizer(tokenizer, model_args)
     try:
         processor = AutoProcessor.from_pretrained(model_args.model_name_or_path, **init_kwargs)
         patch_processor(processor, config, tokenizer, model_args)
@@ -122,6 +109,19 @@ def load_config(model_args: "ModelArguments") -> "PretrainedConfig":
     init_kwargs = _get_init_kwargs(model_args)
     return AutoConfig.from_pretrained(model_args.model_name_or_path, **init_kwargs)
 
+def load_neuron_model(model_args,training_args,context_manager):
+    config = load_config(model_args)
+    if type(config) in AutoModelForVision2Seq._model_mapping.keys():  # assume built-in models
+        load_class = AutoModelForVision2Seq
+    else:
+        load_class = AutoModelForCausalLM
+    with context_manager:
+        model = load_class.from_pretrained(
+            model_args.model_name_or_path, 
+            low_cpu_mem_usage=True, 
+            torch_dtype=torch.bfloat16 if training_args.bf16 else torch.float32
+            )
+    return model
 
 def load_model(
     tokenizer: "PreTrainedTokenizer",

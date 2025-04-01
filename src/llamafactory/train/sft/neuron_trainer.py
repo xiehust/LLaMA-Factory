@@ -24,10 +24,12 @@ import torch
 from typing_extensions import override
 from ...extras import logging
 from ...extras.constants import IGNORE_INDEX
-from ...extras.packages import is_transformers_version_greater_than
+from ...extras.packages import is_transformers_version_greater_than,is_neuron_available
 from ..callbacks import SaveProcessorCallback
 from ..trainer_utils import create_custom_optimizer, create_custom_scheduler
-from transformers import Seq2SeqTrainer
+
+if is_neuron_available():
+    from optimum.neuron import NeuronSFTTrainer,Seq2SeqNeuronTrainer, NeuronTrainer
 
 if TYPE_CHECKING:
     from torch.utils.data import Dataset
@@ -40,7 +42,7 @@ if TYPE_CHECKING:
 logger = logging.get_logger(__name__)
 
 
-class CustomSeq2SeqTrainer(Seq2SeqTrainer):
+class CustomSeq2SeqTrainer(Seq2SeqNeuronTrainer):
     r"""
     Inherits Seq2SeqTrainer to compute generative metrics such as BLEU and ROUGE.
     """
@@ -48,22 +50,10 @@ class CustomSeq2SeqTrainer(Seq2SeqTrainer):
     def __init__(
         self, finetuning_args: "FinetuningArguments", processor: Optional["ProcessorMixin"], **kwargs
     ) -> None:
-        if is_transformers_version_greater_than("4.46"):
-            kwargs["processing_class"] = kwargs.pop("tokenizer")
-        else:
-            self.processing_class: "PreTrainedTokenizer" = kwargs.get("tokenizer")
-
         super().__init__(**kwargs)
         self.finetuning_args = finetuning_args
-
         if processor is not None:
             self.add_callback(SaveProcessorCallback(processor))
-
-        if finetuning_args.use_badam:
-            from badam import BAdamCallback, clip_grad_norm_old_version  # type: ignore
-
-            self.accelerator.clip_grad_norm_ = MethodType(clip_grad_norm_old_version, self.accelerator)
-            self.add_callback(BAdamCallback)
 
     @override
     def create_optimizer(self) -> "torch.optim.Optimizer":
@@ -94,7 +84,7 @@ class CustomSeq2SeqTrainer(Seq2SeqTrainer):
 
         It should be removed after https://github.com/huggingface/transformers/pull/35651 is merged.
         """
-        loss = super().compute_loss(model, inputs, return_outputs, **kwargs)
+        loss = super().compute_loss(model, inputs, **kwargs)
         if kwargs.get("num_items_in_batch") and not getattr(self, "model_accepts_loss_kwargs", False):
             if return_outputs:
                 loss = (loss[0] / self.args.gradient_accumulation_steps, *loss[1:])
@@ -117,6 +107,7 @@ class CustomSeq2SeqTrainer(Seq2SeqTrainer):
 
         Subclass and override to inject custom behavior.
         """
+        logger.info("~~~~~~~~~~~~~~~~~~~~~prediction_step()")
         if self.args.predict_with_generate:  # do not pass labels to model when generate
             labels = inputs.pop("labels", None)
         else:

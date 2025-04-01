@@ -23,7 +23,6 @@ import torch
 from transformers.training_args import _convert_str_dict
 from typing_extensions import Self
 
-
 @dataclass
 class QuantizationArguments:
     r"""
@@ -201,7 +200,7 @@ class ModelArguments(QuantizationArguments, ProcessorArguments, ExportArguments,
         default=True,
         metadata={"help": "Whether or not to use memory-efficient model loading."},
     )
-    rope_scaling: Optional[Literal["linear", "dynamic"]] = field(
+    rope_scaling: Optional[Literal["linear", "dynamic", "yarn", "llama3"]] = field(
         default=None,
         metadata={"help": "Which scaling strategy should be adopted for the RoPE embeddings."},
     )

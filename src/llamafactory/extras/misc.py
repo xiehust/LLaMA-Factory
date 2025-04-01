@@ -30,6 +30,7 @@ from transformers.utils import (
     is_torch_mps_available,
     is_torch_npu_available,
     is_torch_xpu_available,
+    is_torch_neuroncore_available,
 )
 from transformers.utils.versions import require_version
 
@@ -162,6 +163,27 @@ def get_current_device() -> "torch.device":
     return torch.device(device)
 
 
+def get_neuron_cores():
+    import subprocess
+    
+    try:
+        # Run neuron-ls command and capture output
+        result = subprocess.run(['neuron-ls'], capture_output=True, text=True)
+        
+        # Split output into lines
+        lines = result.stdout.split('\n')
+        
+        # Look for the line containing NEURON CORES value
+        for line in lines:
+            if '|' in line:
+                columns = [col.strip() for col in line.split('|')]
+                if len(columns) >= 3 and columns[2].isdigit():
+                    return int(columns[2])
+        return 0
+    except Exception as e:
+        print(f"Error: {e}")
+        return 0
+    
 def get_device_count() -> int:
     r"""
     Gets the number of available GPU or NPU devices.
@@ -172,6 +194,9 @@ def get_device_count() -> int:
         return torch.npu.device_count()
     elif is_torch_cuda_available():
         return torch.cuda.device_count()
+    elif is_torch_neuroncore_available():
+        neuron_cores = get_neuron_cores()
+        return neuron_cores
     else:
         return 0
 
