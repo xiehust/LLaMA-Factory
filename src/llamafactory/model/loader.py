@@ -109,6 +109,19 @@ def load_config(model_args: "ModelArguments") -> "PretrainedConfig":
     init_kwargs = _get_init_kwargs(model_args)
     return AutoConfig.from_pretrained(model_args.model_name_or_path, **init_kwargs)
 
+def load_neuron_model(model_args,training_args,context_manager):
+    config = load_config(model_args)
+    if type(config) in AutoModelForVision2Seq._model_mapping.keys():  # assume built-in models
+        load_class = AutoModelForVision2Seq
+    else:
+        load_class = AutoModelForCausalLM
+    with context_manager:
+        model = load_class.from_pretrained(
+            model_args.model_name_or_path, 
+            low_cpu_mem_usage=True, 
+            torch_dtype=torch.bfloat16 if training_args.bf16 else torch.float32
+            )
+    return model
 
 def load_model(
     tokenizer: "PreTrainedTokenizer",

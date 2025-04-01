@@ -28,7 +28,7 @@ from transformers import HfArgumentParser
 from transformers.integrations import is_deepspeed_zero3_enabled
 from transformers.trainer_utils import get_last_checkpoint
 from transformers.training_args import ParallelMode
-from transformers.utils import is_torch_bf16_gpu_available, is_torch_npu_available
+from transformers.utils import is_torch_bf16_gpu_available, is_torch_npu_available, is_torch_neuroncore_available
 
 from ..extras import logging
 from ..extras.constants import CHECKPOINT_NAMES

@@ -23,7 +23,6 @@ import torch
 from transformers.training_args import _convert_str_dict
 from typing_extensions import Self
 
-
 @dataclass
 class QuantizationArguments:
     r"""

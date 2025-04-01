@@ -71,6 +71,7 @@ class Command(str, Enum):
     WEBUI = "webui"
     VER = "version"
     HELP = "help"
+    COMPILE = 'compile'
 
 
 def main():
@@ -118,6 +119,29 @@ def main():
         print(WELCOME)
     elif command == Command.HELP:
         print(USAGE)
+    elif command == Command.COMPILE:
+        force_torchrun = os.getenv("FORCE_TORCHRUN", "0").lower() in ["true", "1"]
+        if force_torchrun or (get_device_count() > 1 and not use_ray()):
+            master_addr = os.getenv("MASTER_ADDR", "127.0.0.1")
+            master_port = os.getenv("MASTER_PORT", str(random.randint(20001, 29999)))
+            logger.info_rank0(f"Initializing distributed tasks at: {master_addr}:{master_port}")
+            os.environ["XLA_USE_BF16"] = "1"
+            process = subprocess.run(
+                (
+                    "neuron_parallel_compile torchrun --nnodes {nnodes} --nproc_per_node {nproc_per_node} "
+                    "{file_name} {args} --max_steps 2"
+                )
+                .format(
+                    nnodes=os.getenv("NNODES", "1"),
+                    nproc_per_node=os.getenv("NPROC_PER_NODE", str(get_device_count())),
+                    file_name=launcher.__file__,
+                    args=" ".join(sys.argv[1:]),
+                )
+                .split()
+            )
+            sys.exit(process.returncode)
+        else:
+            raise ValueError("Must force_torchrun, get_device_count > 1 and not use_ray() ")
     else:
         raise NotImplementedError(f"Unknown command: {command}.")
 
